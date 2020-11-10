@@ -17,3 +17,5 @@ const Splitter = () => (
         </SplitterLayout>
     </SplitterLayout>
 );
+
+export default Splitter;
