@@ -19,6 +19,7 @@ namespace PrognozMdp
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddControllers().AddNewtonsoftJson();
 
             services.AddControllersWithViews();
 
@@ -50,7 +51,7 @@ namespace PrognozMdp
             {
                 endpoints.MapControllerRoute(
                     name: "default",
-                    pattern: "{controller}/{action=Index}/{id?}");
+                    pattern: "{controller}/{action=GetSections}");
             });
 
             app.UseSpa(spa =>
