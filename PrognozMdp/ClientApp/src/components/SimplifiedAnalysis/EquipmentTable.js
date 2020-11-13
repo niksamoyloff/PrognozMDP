@@ -1,62 +1,9 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
-//import { useTable, usePagination } from 'react-table';
-//import 'bootstrap/dist/css/bootstrap.min.css';
-//import BTable from 'react-bootstrap/Table';
 import axios from 'axios';
-import ReactTable from 'react-table-6'
-import 'react-table-6/react-table.css'
-import './EquipmentTable.css'
+import ReactTable from 'react-table-6';
 import StateButton from './EquipmentStateToggleButton';
-
-//function Table({ columns, data }) {
-//    const {
-//        getTableProps,
-//        getTableBodyProps,
-//        headerGroups,
-//        rows,
-//        prepareRow,
-//    } = useTable(
-//        {
-//            columns,
-//            data,
-//            initialState: { pageSize: 15 }
-//        }, 
-//        usePagination
-//    );
-
-//    // Render the UI for your table
-//    return (
-//        <BTable striped bordered hover size="sm" {...getTableProps()}>
-//          <thead>
-//            {headerGroups.map(headerGroup => (
-//                <tr {...headerGroup.getHeaderGroupProps()}>
-//                {headerGroup.headers.map(column => (
-//                    <th {...column.getHeaderProps()}>
-//                    {column.render('Header')}
-//                  </th>
-//                ))}
-//              </tr>
-//            ))}
-//          </thead>
-//          <tbody {...getTableBodyProps()}>
-//            {rows.map((row, i) => {
-//                prepareRow(row);
-//                return (
-//                    <tr {...row.getRowProps()}>
-//                  {row.cells.map(cell => {
-//                      return (
-//                          <td {...cell.getCellProps()}>
-//                        {cell.render('Cell')}
-//                      </td>
-//                      );
-//                  })}
-//                </tr>
-//                );
-//            })}
-//          </tbody>
-//        </BTable>
-//    );
-//}
+import 'react-table-6/react-table.css';
+import './EquipmentTable.css';
 
 function EquipmentTable(props) {
     const [equipment, setEquipment] = useState([]);
