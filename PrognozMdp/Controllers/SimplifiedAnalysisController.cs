@@ -44,7 +44,7 @@ namespace PrognozMdp.Controllers
             return sectionList.ToArray();
         }
 
-        [HttpPost]
+        [HttpGet]
         public JObject[] GetEquipmentBySection(string sectionId)
         {
             if (string.IsNullOrEmpty(sectionId))
@@ -58,7 +58,7 @@ namespace PrognozMdp.Controllers
                 {
                     var jObject = JObject.FromObject(new
                     {
-                        idEq = row.ItemArray[0],
+                        //idEq = row.ItemArray[0],
                         typeEq = row.ItemArray[1],
                         nameEq = row.ItemArray[2],
                         tsId = row.ItemArray[3]
