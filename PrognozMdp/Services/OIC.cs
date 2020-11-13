@@ -123,7 +123,6 @@ namespace PrognozMdp.Services
             if (string.IsNullOrEmpty(sectionId))
                 return null;
             var query =  new StringBuilder("USE OIK " +
-                                          "GO " +
                                           "SELECT e.ID, et.Abbr, e.Name, s.ID " +
                                           "FROM psSect AS bg " +
                                           "INNER JOIN psEqSect AS bge ON bg.ID = bge.IDSect " +
