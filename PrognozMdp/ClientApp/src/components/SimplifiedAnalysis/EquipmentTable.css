@@ -1,0 +1,12 @@
+﻿.ReactTable {
+    margin-top: 10px;
+    height: 500px;
+}
+
+.ReactTable .rt-thead {
+    overflow-y: scroll;
+}
+
+.ReactTable .rt-noData {
+    z-index: 0;
+}
