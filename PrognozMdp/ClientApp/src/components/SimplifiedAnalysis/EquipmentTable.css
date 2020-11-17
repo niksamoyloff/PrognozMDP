@@ -3,10 +3,19 @@
     height: 500px;
 }
 
-.ReactTable .rt-thead {
+.ReactTable .rt-thead, .ReactTable .rt-tbody, .ReactTable .rt-tfoot  {
     overflow-y: scroll;
 }
 
-.ReactTable .rt-noData {
-    z-index: 0;
+.ReactTable .rt-noData, .ReactTable .btn {
+    z-index: 0 !important;
+}
+
+.ReactTable .rt-tfoot .rt-td {
+    height: 30px;
+    padding-top: 3px;
+}
+
+.ReactTable .rt-tfoot .rt-td {
+    border-right: none;
 }
