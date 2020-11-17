@@ -1,0 +1,10 @@
+﻿.btn-primary {
+    color: #fff;
+    background-color: #007bff !important;
+    border-color: #007bff !important;
+}
+
+.calc-btn {
+    display: inline-block;
+    float: right;
+}
