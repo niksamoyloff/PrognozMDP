@@ -61,7 +61,8 @@ namespace PrognozMdp.Controllers
                         //idEq = row.ItemArray[0],
                         typeEq = row.ItemArray[1],
                         nameEq = row.ItemArray[2],
-                        tsId = row.ItemArray[3]
+                        tsId = row.ItemArray[3],
+                        isEnabled = true
                     });
                     eqList.Add(jObject);
                 }
