@@ -1,0 +1,11 @@
+﻿.select-time, .select-time .form-check {
+    display: inline-block;
+}
+
+.select-time .form-check-input {
+    margin-top: 7px;
+}
+
+.select-time .react-datetime-picker {
+    margin-left: 10px;
+}
