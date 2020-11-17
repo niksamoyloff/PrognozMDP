@@ -1,6 +1,7 @@
 import React, { Fragment, useState } from 'react';
 import SelectSection from './SelectSection';
 import EquipmentTable from './EquipmentTable';
+import Calculation from './Calculation';
 
 function Home() {
     const [sectionId, setSectionId] = useState("");
@@ -13,6 +14,7 @@ function Home() {
         <Fragment>
             <SelectSection onChangeSectionId={handleChangeSectionId} />
             <EquipmentTable sectionId={sectionId} />
+            <Calculation />
         </Fragment>
     );
 }
