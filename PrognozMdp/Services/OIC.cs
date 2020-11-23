@@ -3,23 +3,33 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Configuration;
+using OICDAC;
 
 namespace PrognozMdp.Services
 {
-    public class OIC 
+    public class Oic
     {
-        public string OicConnectionStringMainGroup { get; }
+        public string OicConnectionStringMainGroup { get; } 
         public string OicConnectionStringMainGroupReserve { get; }
         public string OicConnectionStringReserveGroup { get; }
+        public Dictionary<string, double> OicParamsValues { get; set; }
 
         private readonly IConfiguration _configuration;
+        private DAC _dac;
+        private OIRequest _request;
+        private readonly RpnCalc _calc;
 
-        public OIC(IConfiguration configuration)
+        public Oic(IConfiguration configuration)
         {
             _configuration = configuration;
+            _dac = new DACClass();
+            _calc = new RpnCalc();
             OicConnectionStringMainGroup = _configuration.GetSection("ConnectionStrings").GetSection("oicConnectionStringMainGroup").Value;
             OicConnectionStringMainGroupReserve = _configuration.GetSection("ConnectionStrings").GetSection("oicConnectionStringMainGroupReserve").Value;
             OicConnectionStringReserveGroup = _configuration.GetSection("ConnectionStrings").GetSection("oicConnectionStringReserveGroup").Value;
@@ -135,6 +145,176 @@ namespace PrognozMdp.Services
             var sections = GetDataBySqlQuery(query.ToString());
             return sections;
         }
+
+        public Dictionary<string, int?> GetSchemeByBitMask(string sectionId, string mask)
+        {
+            if (string.IsNullOrEmpty(mask) || string.IsNullOrEmpty(sectionId))
+                throw new ArgumentNullException();
+            var bitMask = mask + new string('1', 64 - mask.Length);  
+            // Convert bit mask to Int64
+            var maskToQuery = Convert.ToInt64(bitMask, 2);
+            var query = new StringBuilder("USE OIK " +
+                                          "SELECT IDTI, Max1, Crash1, Max2, Crash2, Max1s, Max2s, " +
+                                          "FMax1, FMax2, FMax1s, FMax2s, FCrash1, FCrash2 " +
+                                          "FROM [OIK].[dbo].[psSchem] " +
+                                          $"WHERE IDSect = {sectionId} AND Mask = {maskToQuery}");
+            
+            var data = GetDataBySqlQuery(query.ToString());
+            var scheme = new Dictionary<string, int?>();
+            if (data != null && data.Count > 0)
+            {
+                scheme = data[0].Table.Columns
+                    .Cast<DataColumn>()
+                    .ToDictionary(c => c.ColumnName, c => (int?)data[0][c]);
+            }
+            return scheme;
+        }
+
+        public string[] GetParamsByFormulaId(int? formulaId)
+        {
+            var query = new StringBuilder("SELECT CONCAT(OI, SID) AS Prmtr" +
+                                          "FROM [OIK].[dbo].[TIFormulasR] " +
+                                          $"WHERE FID = {formulaId}");
+
+            var data = GetDataBySqlQuery(query.ToString());
+            var oicFormulaParams = data.Cast<DataRow>().Select(row => row.ItemArray[0].ToString()).ToArray();
+            return oicFormulaParams;
+        }
+
+        public string GetFormulaById(int? formulaId)
+        {
+            var query = new StringBuilder("SELECT [Frml] FROM [OIK].[dbo].[TIFormulas] "+
+                                          $"WHERE ID = {formulaId}");
+
+            var data = GetDataBySqlQuery(query.ToString());
+            var formula = data.Cast<DataRow>().Select(row => row.ItemArray[0].ToString()).FirstOrDefault();
+            return formula;
+        }
+
+        public double CalcFlowByFormula(string formula, string[] formulaParams, DateTime? dt)
+        {
+            GetOicParamsValues(formulaParams, dt);
+            var flowValue = _calc.Calculate(formula, OicParamsValues);
+            return flowValue;
+        }
+
+        public void CreateConnection()
+        {
+            if (_dac.Connection.Connected)
+                _dac.Connection.Connected = false;
+            _dac.Connection.ConnectKind = ConnectKindEnum.ck_Default;
+
+            try
+            {
+                _dac.Connection.Connected = true;
+            }
+            catch (Exception ex)
+            {
+                throw new COMException("Ошибка соединения с ОИК: ", ex);
+            }
+        }
+
+        public void CloseConnection()
+        {
+            try
+            {
+                _dac.Connection.Connected = false;
+            }
+            catch (Exception ex)
+            {
+                throw new COMException("Ошибка разрыва соединения с ОИК: ", ex);
+            }
+        }
+
+        private void CreateRequest()
+        {
+            _request = _dac.OIRequests.Add();
+            _request.OnGetResult += Request_OnGetResult;
+        }
+        private void StopRequest()
+        {
+            if (_dac.OIRequests.Count > 0)
+            {
+                _dac.OIRequests.Item(0).Stop();
+                _dac.OIRequests.Item(0).Delete();
+                _request = null;
+            }
+        }
+        private void Request_OnGetResult(string DataSource, KindRefreshEnum KindRefresh, DateTime Time, object Data, int Sign, int Tag)
+        {
+            OicParamsValues.Add(DataSource, (double)Data);
+        }
+        public void GetOicParamsValues(string[] oicParams, DateTime? dt)
+        {
+            if (!_dac.Connection.Connected)
+                return;
+            OicParamsValues.Clear();
+            StopRequest();
+
+            if (oicParams.Length > 0)
+            {
+                CreateRequest();
+                foreach (var param in oicParams)
+                {
+                    OIRequestItem requestItem = _request.AddOIRequestItem();
+                    requestItem.IsLocalTime = true;
+                    requestItem.KindRefresh = KindRefreshEnum.kr_ActualData;
+                    requestItem.DataSource = param;
+                    requestItem.TimeStart = dt ?? DateTime.Now;
+                    requestItem.TimeStop = dt ?? DateTime.Now;
+                }
+                _request.Start();
+            }
+        }
+
+        ~Oic()
+        {
+            Dispose(false);
+        }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects).
+                    if (_dac.Connection.Connected)
+                    {
+                        _dac.Connection.Connected = false;
+                    }
+
+                    _dac = null;
+                    _request = null;
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
+                // TODO: set large fields to null.
+
+                disposedValue = true;
+            }
+        }
+
+        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+        // ~OIC()
+        // {
+        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+        //   Dispose(false);
+        // }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            // TODO: uncomment the following line if the finalizer is overridden above.
+            // подавляем финализацию
+            GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 }
 
