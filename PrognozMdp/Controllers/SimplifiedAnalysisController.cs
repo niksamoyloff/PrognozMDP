@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Server.IIS.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -13,22 +15,22 @@ using PrognozMdp.Services;
 namespace PrognozMdp.Controllers
 {
     [Route("[controller]/[action]")]
-    [ApiController]
+    //[ApiController]
     public class SimplifiedAnalysisController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
+        //private readonly IConfiguration _configuration;
         private readonly Oic _oic;
-        public SimplifiedAnalysisController(IConfiguration configuration)
+        public SimplifiedAnalysisController(Oic oic)
         {
-            _configuration = configuration;
-            _oic  = new Oic(_configuration);
+            _oic = oic;
         }
 
         [HttpGet]
         public JObject[] GetSections()
         {
-            var sectionCollection = _oic.GetSectionsFromOic();
+            var sectionCollection = _oic?.GetSectionsFromOic();
             var sectionList = new List<JObject>();
+            var test = new List<JObject>();
 
             if (sectionCollection != null && sectionCollection.Count > 0)
             {
@@ -43,6 +45,7 @@ namespace PrognozMdp.Controllers
                 }
             }
             return sectionList.ToArray();
+            //return test.ToArray();
         }
 
         [HttpGet]
@@ -50,7 +53,7 @@ namespace PrognozMdp.Controllers
         {
             if (string.IsNullOrEmpty(sectionId))
                 return null;
-            var eqCollection = _oic.GetEquipmentBySectionFromOic(sectionId);
+            var eqCollection = _oic?.GetEquipmentBySectionFromOic(sectionId);
             var eqList = new List<JObject>();
 
             if (eqCollection != null && eqCollection.Count > 0)
@@ -72,39 +75,57 @@ namespace PrognozMdp.Controllers
         }
 
         [HttpGet]
-        public double? CalculateFlowByScheme(string flow, string sectionId, string mask, DateTime? dt)
+        public JObject CalculateFlowByScheme(string flow, string sectionId, string mask, DateTime? dt)
         {
-            var scheme = _oic.GetSchemeByBitMask(sectionId, mask);
-            double? result;
-            string formula;
-            string[] oicFormulaParams;
+            var scheme = _oic?.GetSchemeByBitMask(sectionId, mask);
+            JObject result = new JObject
+            {
+                {"flowCurrentValue", null},
+                {"flowCalcValue", null}
+            };
             if (scheme == null || scheme.Count == 0)
-                return null;
-            _oic.GetOicParamsValues(new[] {"I" + scheme["IDTI"]}, DateTime.Now);
-            var oicParamsVals = _oic.OicParamsValues;
-            var flowCurrentValue = oicParamsVals.FirstOrDefault().Value;
+                return result;
+            if (string.IsNullOrEmpty(scheme["Max1"]) &&
+                string.IsNullOrEmpty(scheme["Max2"]) &&
+                string.IsNullOrEmpty(scheme["Crash1"]) &&
+                string.IsNullOrEmpty(scheme["Crash1"]))
+                return result;
+            
+            string formula;
+            
+            _oic?.GetOicParamsValues(new[] {"I" + scheme["IDTI"]}, DateTime.Now);
+            var flowCurrentValue = Convert.ToDouble(_oic?.OicParamsValues?.FirstOrDefault().Value);
+            result["flowCurrentValue"] = flowCurrentValue;
 
             if (flow.Equals("mdp"))
             {
                 if (flowCurrentValue >= 0)
                 {
-                    if (scheme["Max1"] != null)
+                    if (!string.IsNullOrEmpty(scheme["Max1"]))
                     {
-                        if (scheme["FMax1"] != 1) return scheme["Max1"];
-                        formula = _oic.GetFormulaById(scheme["Max1"]);
-                        oicFormulaParams = _oic.GetParamsByFormulaId(scheme["Max1"]);
-                        result = _oic.CalcFlowByFormula(formula, oicFormulaParams, dt);
+                        if (scheme["FMax1"] != true.ToString())
+                        {
+                            result["flowCalcValue"] = Convert.ToDouble(scheme["Max1"]);
+                            return result;
+                        }
+                        formula = _oic?.GetFormulaById(scheme["Max1"]);
+                        _oic.GetParamsByFormulaId(scheme["Max1"], dt);
+                        result["flowCalcValue"] = _oic?.CalcFlowByFormula(formula);
                         return result;
                     }
                 }
                 else
                 {
-                    if (scheme["Max2"] != null)
+                    if (!string.IsNullOrEmpty(scheme["Max2"]))
                     {
-                        if (scheme["FMax2"] != 1) return scheme["Max2"];
-                        formula = _oic.GetFormulaById(scheme["Max2"]);
-                        oicFormulaParams = _oic.GetParamsByFormulaId(scheme["Max2"]);
-                        result = _oic.CalcFlowByFormula(formula, oicFormulaParams, dt);
+                        if (scheme["FMax2"] != true.ToString())
+                        {
+                            result["flowCalcValue"] = Convert.ToDouble(scheme["Max2"]);
+                            return result;
+                        }
+                        formula = _oic?.GetFormulaById(scheme["Max2"]);
+                        _oic?.GetParamsByFormulaId(scheme["Max2"], dt);
+                        result["flowCalcValue"] = _oic?.CalcFlowByFormula(formula);
                         return result;
                     }
                 }
@@ -114,28 +135,36 @@ namespace PrognozMdp.Controllers
             {
                 if (flowCurrentValue >= 0)
                 {
-                    if (scheme["Crash1"] != null)
+                    if (!string.IsNullOrEmpty(scheme["Crash1"]))
                     {
-                        if (scheme["FCrash1"] != 1) return scheme["Crash1"];
-                        formula = _oic.GetFormulaById(scheme["Crash1"]);
-                        oicFormulaParams = _oic.GetParamsByFormulaId(scheme["Crash1"]);
-                        result = _oic.CalcFlowByFormula(formula, oicFormulaParams, dt);
+                        if (scheme["FCrash1"] != true.ToString())
+                        {
+                            result["flowCalcValue"] = Convert.ToDouble(scheme["Crash1"]);
+                            return result;
+                        }
+                        formula = _oic?.GetFormulaById(scheme["Crash1"]);
+                        _oic?.GetParamsByFormulaId(scheme["Crash1"], dt);
+                        result["flowCalcValue"] = _oic?.CalcFlowByFormula(formula);
                         return result;
                     }
                 }
                 else
                 {
-                    if (scheme["Crash2"] != null)
+                    if (!string.IsNullOrEmpty(scheme["Crash2"]))
                     {
-                        if (scheme["FCrash2"] != 1) return scheme["Crash2"];
-                        formula = _oic.GetFormulaById(scheme["Crash2"]);
-                        oicFormulaParams = _oic.GetParamsByFormulaId(scheme["Crash2"]);
-                        result = _oic.CalcFlowByFormula(formula, oicFormulaParams, dt);
+                        if (scheme["FCrash2"] != true.ToString())
+                        {
+                            result["flowCalcValue"] = Convert.ToDouble(scheme["Crash2"]);
+                            return result;
+                        }
+                        formula = _oic?.GetFormulaById(scheme["Crash2"]);
+                        _oic?.GetParamsByFormulaId(scheme["Crash2"], dt);
+                        result["flowCalcValue"] = _oic?.CalcFlowByFormula(formula);
                         return result;
                     }
                 }
             }
-            return null;
+            return result;
         }
     }
 }
