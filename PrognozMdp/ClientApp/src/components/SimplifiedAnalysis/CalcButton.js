@@ -1,32 +1,66 @@
-﻿import React, { useState, useEffect } from 'react';
-import { Button } from 'react-bootstrap';
+﻿import React, { Fragment, useState, useEffect } from 'react';
+import { Button, Spinner } from 'react-bootstrap';
+import axios from 'axios';
 import './CalcButton.css'
 
-function simulateNetworkRequest() {
-    return new Promise((resolve) => setTimeout(resolve, 2000));
-}
-
-function CalcButton() {
+function CalcButton(props) {
     const [isLoading, setLoading] = useState(false);
 
     useEffect(() => {
         if (isLoading) {
-            simulateNetworkRequest().then(() => {
-                setLoading(false);
-            });
+            const fetchFlowValue = async () => {
+                try {
+                    await axios.get('SimplifiedAnalysis/CalculateFlowByScheme',
+                        {
+                            params: {
+                                flow: props.flow,
+                                sectionId: props.sectId,
+                                mask: props.bitMask,
+                                dt: props.dt
+                            }
+                        }).then(response => {
+                        const result = response.data;
+                        props.onGetFlow(result);
+                    });
+                } catch (e) {
+                    console.error(e);
+                } finally {
+                    setLoading(false);
+                    props.onLoading(false);
+                }
+            };
+            fetchFlowValue();
         }
     }, [isLoading]);
 
-    const handleClick = () => setLoading(true);
+    const handleClick = () => {
+         setLoading(true);
+         props.onLoading(true);
+    }
 
     return (
-        <Button
-            variant="primary"
-            disabled={isLoading}
-            onClick={!isLoading ? handleClick : null}
-        >
-            {isLoading ? 'Расчет...' : 'Расчет'}
-        </Button>
+        <Fragment>
+            <Button
+                variant="primary"
+                disabled={!isLoading && props.bitMask ? false : true}
+                onClick={!isLoading ? handleClick : null}
+            >
+                {
+                    isLoading ?
+                    <Fragment>
+                        <span>Расчет </span>
+                        <Spinner
+                            as="span"
+                            animation="border"
+                            size="sm"
+                            role="status"
+                            aria-hidden="true"
+                        />
+                    </Fragment>
+                    : 'Расчет'
+                }
+            </Button>
+        </Fragment>
     );
 }
 
