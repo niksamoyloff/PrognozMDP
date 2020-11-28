@@ -19,3 +19,7 @@
 .ReactTable .rt-tfoot .rt-td {
     border-right: none;
 }
+/*For IE*/
+.ReactTable .rt-tbody .rt-td {
+    max-height: 80px;
+}
