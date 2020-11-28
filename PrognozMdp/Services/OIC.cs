@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Configuration;
@@ -18,18 +19,19 @@ namespace PrognozMdp.Services
         public string OicConnectionStringMainGroup { get; } 
         public string OicConnectionStringMainGroupReserve { get; }
         public string OicConnectionStringReserveGroup { get; }
-        public Dictionary<string, double> OicParamsValues { get; set; }
+        public Dictionary<string, string> OicParamsValues { get; set; }
 
         private readonly IConfiguration _configuration;
         private DAC _dac;
         private OIRequest _request;
-        private readonly RpnCalc _calc;
+        private RpnCalc _calc;
 
-        public Oic(IConfiguration configuration)
+        public Oic(IConfiguration configuration, DAC dac)
         {
             _configuration = configuration;
-            _dac = new DACClass();
+            _dac = dac;
             _calc = new RpnCalc();
+            OicParamsValues = new Dictionary<string, string>();
             OicConnectionStringMainGroup = _configuration.GetSection("ConnectionStrings").GetSection("oicConnectionStringMainGroup").Value;
             OicConnectionStringMainGroupReserve = _configuration.GetSection("ConnectionStrings").GetSection("oicConnectionStringMainGroupReserve").Value;
             OicConnectionStringReserveGroup = _configuration.GetSection("ConnectionStrings").GetSection("oicConnectionStringReserveGroup").Value;
@@ -146,7 +148,7 @@ namespace PrognozMdp.Services
             return sections;
         }
 
-        public Dictionary<string, int?> GetSchemeByBitMask(string sectionId, string mask)
+        public Dictionary<string, string> GetSchemeByBitMask(string sectionId, string mask)
         {
             if (string.IsNullOrEmpty(mask) || string.IsNullOrEmpty(sectionId))
                 throw new ArgumentNullException();
@@ -154,34 +156,35 @@ namespace PrognozMdp.Services
             // Convert bit mask to Int64
             var maskToQuery = Convert.ToInt64(bitMask, 2);
             var query = new StringBuilder("USE OIK " +
-                                          "SELECT IDTI, Max1, Crash1, Max2, Crash2, Max1s, Max2s, " +
+                                          "SELECT IDTI, Mask, Max1, Crash1, Max2, Crash2, Max1s, Max2s, " +
                                           "FMax1, FMax2, FMax1s, FMax2s, FCrash1, FCrash2 " +
                                           "FROM [OIK].[dbo].[psSchem] " +
                                           $"WHERE IDSect = {sectionId} AND Mask = {maskToQuery}");
             
             var data = GetDataBySqlQuery(query.ToString());
-            var scheme = new Dictionary<string, int?>();
+            var scheme = new Dictionary<string, string>();
             if (data != null && data.Count > 0)
             {
                 scheme = data[0].Table.Columns
                     .Cast<DataColumn>()
-                    .ToDictionary(c => c.ColumnName, c => (int?)data[0][c]);
+                    .ToDictionary(c => c.ColumnName, c => data[0][c].ToString());
             }
             return scheme;
         }
 
-        public string[] GetParamsByFormulaId(int? formulaId)
+        public void GetParamsByFormulaId(string formulaId, DateTime? dt)
         {
-            var query = new StringBuilder("SELECT CONCAT(OI, SID) AS Prmtr" +
+            var query = new StringBuilder("SELECT CONCAT(OI, SID) AS Prmtr " +
                                           "FROM [OIK].[dbo].[TIFormulasR] " +
                                           $"WHERE FID = {formulaId}");
 
             var data = GetDataBySqlQuery(query.ToString());
             var oicFormulaParams = data.Cast<DataRow>().Select(row => row.ItemArray[0].ToString()).ToArray();
-            return oicFormulaParams;
+            OicParamsValues?.Clear();
+            GetOicParamsValues(oicFormulaParams, dt);
         }
 
-        public string GetFormulaById(int? formulaId)
+        public string GetFormulaById(string formulaId)
         {
             var query = new StringBuilder("SELECT [Frml] FROM [OIK].[dbo].[TIFormulas] "+
                                           $"WHERE ID = {formulaId}");
@@ -191,9 +194,10 @@ namespace PrognozMdp.Services
             return formula;
         }
 
-        public double CalcFlowByFormula(string formula, string[] formulaParams, DateTime? dt)
+        public double CalcFlowByFormula(string formula)
         {
-            GetOicParamsValues(formulaParams, dt);
+            //GetOicParamsValues(formulaParams, dt);
+            Thread.Sleep(2000);
             var flowValue = _calc.Calculate(formula, OicParamsValues);
             return flowValue;
         }
@@ -242,13 +246,17 @@ namespace PrognozMdp.Services
         }
         private void Request_OnGetResult(string DataSource, KindRefreshEnum KindRefresh, DateTime Time, object Data, int Sign, int Tag)
         {
-            OicParamsValues.Add(DataSource, (double)Data);
+            if (!OicParamsValues.ContainsKey(DataSource))
+                OicParamsValues.Add(DataSource, Data.ToString());
+            else
+                OicParamsValues[DataSource] = Data.ToString();
         }
         public void GetOicParamsValues(string[] oicParams, DateTime? dt)
         {
+            CreateConnection();
             if (!_dac.Connection.Connected)
                 return;
-            OicParamsValues.Clear();
+            OicParamsValues?.Clear();
             StopRequest();
 
             if (oicParams.Length > 0)

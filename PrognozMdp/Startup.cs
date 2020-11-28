@@ -1,9 +1,15 @@
+using System.IO;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SpaServices.ReactDevelopmentServer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
+using OICDAC;
+using PrognozMdp.Controllers;
+using PrognozMdp.Services;
 
 namespace PrognozMdp
 {
@@ -19,10 +25,20 @@ namespace PrognozMdp
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers().AddNewtonsoftJson();
+            DAC dac = new DACClass();
+            Oic oic = new Oic(Configuration, dac);
+            services.AddSingleton(oic);
+            services.AddSingleton(dac);
 
-            services.AddControllersWithViews();
+            //services.AddControllers().AddNewtonsoftJson();
+            services.AddMvc(options =>
+            {
+                options.EnableEndpointRouting = false;
+            }).AddNewtonsoftJson();
 
+            //services.AddControllersWithViews();
+            //services.AddScoped<Oic>();
+            //services.AddTransient(ctx => new SimplifiedAnalysisController(new Oic(Configuration)));
             // In production, the React files will be served from this directory
             services.AddSpaStaticFiles(configuration =>
             {
@@ -45,14 +61,31 @@ namespace PrognozMdp
             app.UseStaticFiles();
             app.UseSpaStaticFiles();
 
-            app.UseRouting();
+            //app.UseMvc(routes =>
+            //{
+            //    if (env.IsDevelopment())
+            //    {
+            //        routes.MapRoute(
+            //            name: "default",
+            //            template: "{controller}/{action=GetSections}");
+            //    }
+            //    if (env.IsProduction())
+            //    {
+            //        routes.MapRoute(
+            //            name: "default",
+            //            template: "{controller}/{action=GetSections}");
+            //    }                
+            //});
 
-            app.UseEndpoints(endpoints =>
+            app.UsePathBase("/prognozmdp");
+
+            app.Use((context, next) =>
             {
-                endpoints.MapControllerRoute(
-                    name: "default",
-                    pattern: "{controller}/{action=GetSections}");
+                context.Request.PathBase = "/prognozmdp";
+                return next();
             });
+            app.UseMvc();
+
 
             app.UseSpa(spa =>
             {
