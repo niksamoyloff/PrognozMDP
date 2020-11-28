@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import ReactTable from 'react-table-6';
 import StateToggleButton from './StateToggleButton';
@@ -7,8 +7,7 @@ import './EquipmentTable.css';
 
 function EquipmentTable(props) {
     const [equipment, setEquipment] = useState([]);
-    const [equipmentToCalc, setEquipmentToCalc] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setLoading] = useState(false);
     const states = [
         { name: "Вкл", value: "1" },
         { name: "Откл", value: "0" }
@@ -17,29 +16,54 @@ function EquipmentTable(props) {
 
     useEffect(() => {
         const fetchEquipment = async () => {
-            setIsLoading(true);
-            const result = await axios.get(
-                'SimplifiedAnalysis/GetEquipmentBySection',
-                {
-                    params: {
-                        sectionId: props.sectionId
-                    }
-                }
-            );
-            setEquipment(result.data);
-            setEquipmentToCalc(result.data.map(obj => {
-                let objToCalc = {}
-                objToCalc.nameEq = obj.nameEq;
-                objToCalc.isEnabled = obj.isEnabled;
-                return objToCalc;
+            setLoading(true);
+            try {
+                const response = await axios.get('SimplifiedAnalysis/GetEquipmentBySection',
+                    {
+                        params: { sectionId: props.sectionId }
+                    })
+                    .then(response => {
+                        const result = response.data;
+                        setEquipment(result);
+                        sendBitMaskToProps(result);
+                    })
+                    .catch(() => {
+                    setEquipment([]);
+                });
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setLoading(false);
             }
-            ));
-            console.log(equipmentToCalc);
-            setIsLoading(false);
         };
         if (props.sectionId !== null && props.sectionId !== "")
             fetchEquipment();
     }, [props.sectionId]);
+
+    function handleChangeEquipmentState(row) {
+        row.original.isEnabled = !row.original.isEnabled;
+        const items = [...equipment];
+        const item = {
+             ...equipment[row.original.nameEq], 
+             isEnabled: row.original.isEnabled
+        };
+        items[row.original.nameEq] = item;
+        setEquipment(items);
+        sendBitMaskToProps(items);
+        sendDisabledEq(equipment);
+    }
+
+    function sendDisabledEq(items) {
+        props.onChangeDisabledEq(items
+            .filter((item) => !item.isEnabled)
+            .map(item => item.typeEq + " " + item.nameEq)
+            .join(", "));
+    }
+    function sendBitMaskToProps(items) {
+        props.onChangeBitMask(items.map((item) => {
+            return item.isEnabled ? "1" : "0";
+        }).join(""));
+    }
 
     const columns = useMemo(
         () => [
@@ -71,7 +95,7 @@ function EquipmentTable(props) {
                                     variants={variants}
                                     size="sm"
                                     defaultState={row.original.isEnabled} 
-                                    onChangeState={() => row.original.isEnabled = !row.original.isEnabled}/>
+                                    onChangeState={() => handleChangeEquipmentState(row)}/>
             }   
             ],
         [
