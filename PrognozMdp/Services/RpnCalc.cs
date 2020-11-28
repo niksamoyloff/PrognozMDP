@@ -12,7 +12,7 @@ namespace PrognozMdp.Services
     /// </summary>
     public class RpnCalc
     {
-        public double Calculate(string formula, Dictionary<string, double> paramsDict)
+        public double Calculate(string formula, Dictionary<string, string> paramsDict)
         {
             var stack = new Stack<double>();
             var aliases = new Dictionary<string, double>();
@@ -63,7 +63,7 @@ namespace PrognozMdp.Services
                         break;
                     }
                     //A>=B
-                    case ">=": {
+                    case "}": {
                         var b = stack.Pop();
                         var a = stack.Pop();
                         stack.Push(a >= b ? 1 : 0);
@@ -278,9 +278,9 @@ namespace PrognozMdp.Services
                         break;
                     }
                     //Parameters [S,I,..][1..N]V
-                    case var expression when new Regex(@"[A-Z]{1,2}\d+[V]").IsMatch(expression):
+                    case var expression when new Regex(@"[\wА-ЯA-Z]{1,2}\d+[V]").IsMatch(expression):
                     {
-                        stack.Push(paramsDict[expression]);
+                        stack.Push(Convert.ToDouble(paramsDict[expression.Remove(expression.Length - 1)]));
                         break;
                     }
                     //A=B
