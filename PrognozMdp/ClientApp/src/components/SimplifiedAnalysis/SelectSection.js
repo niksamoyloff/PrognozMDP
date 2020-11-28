@@ -9,22 +9,30 @@ function SelectSection(props) {
     useEffect(() => {
         const fetchSections = async () => {
             setIsLoading(true);
-            const result = await axios(
-                'SimplifiedAnalysis/GetSections',
-            );
-            setSections(result);
-            setIsLoading(false);
+            try {
+                const response = await axios.get('SimplifiedAnalysis/GetSections')
+                    .then(response => {
+                        const result = response.data;
+                        setSections(result);
+                    })
+                    .catch(() => setSections());
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setIsLoading(false);
+            }
         };
         fetchSections();
     }, []);
 
-    function handleChangeSelect(e) {
-        props.onChangeSectionId(e.value);
+    function handleChangeSelect(sect) {
+        props.onChangeSectionId(sect.value);
+        props.onChangeSection(sect.label);
     }
 
     return (
         <Select
-            options={sections.data}
+            options={sections}
             isLoading={isLoading}
             placeholder="Выберите сечение..."
             noOptionsMessage={() => "Сечения отсутствуют."}
@@ -33,3 +41,19 @@ function SelectSection(props) {
 };
 
 export default SelectSection;
+
+//useEffect(() => {
+//    const fetchSections = async () => {
+//        setIsLoading(true);
+//        const response = await window.fetch('SimplifiedAnalysis/GetSections',{
+//            headers: {
+//                'Content-Type': 'application/json'
+//            }
+//        });
+//        const result = await response.json();
+//        setSections(result);
+//        setIsLoading(false);
+//        return result;
+//    };
+//    fetchSections();
+//}, []);
