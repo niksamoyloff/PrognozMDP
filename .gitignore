@@ -340,3 +340,6 @@ ASALocalRun/
 healthchecksdb
 /package-lock.json
 *.csproj
+/PrognozMdp/Interop.OICDAC.dll
+/PrognozMdp/.config/dotnet-tools.json
+/PrognozMdp/ClientApp/.eslintcache
