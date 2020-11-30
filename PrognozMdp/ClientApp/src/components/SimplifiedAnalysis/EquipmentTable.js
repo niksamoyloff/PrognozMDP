@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { Fragment, useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import ReactTable from 'react-table-6';
 import StateToggleButton from './StateToggleButton';
+import Error from '../Error';
 import 'react-table-6/react-table.css';
 import './EquipmentTable.css';
 
 function EquipmentTable(props) {
     const [equipment, setEquipment] = useState([]);
     const [isLoading, setLoading] = useState(false);
+    const [hasError, setHasError] = useState(false);
     const states = [
         { name: "Вкл", value: "1" },
         { name: "Откл", value: "0" }
@@ -26,11 +28,10 @@ function EquipmentTable(props) {
                         const result = response.data;
                         setEquipment(result);
                         sendBitMaskToProps(result);
-                    })
-                    .catch(() => {
-                    setEquipment([]);
-                });
+                    });
             } catch (e) {
+                setEquipment([]);
+                setHasError(true);
                 console.error(e);
             } finally {
                 setLoading(false);
@@ -38,6 +39,7 @@ function EquipmentTable(props) {
         };
         if (props.sectionId !== null && props.sectionId !== "")
             fetchEquipment();
+        setHasError(false);
     }, [props.sectionId]);
 
     function handleChangeEquipmentState(row) {
@@ -107,22 +109,25 @@ function EquipmentTable(props) {
 
     return (
         <div>
-            <ReactTable 
-                columns={columns} 
-                data={equipment} 
-                loading={isLoading}
-                sortable={true}
-                showPagination={false}
-                pageSize={equipment.length}
-                loadingText="Поиск оборудования..."
-                noDataText={equipment.length === 0 ? "Оборудование не найдено." : ""}
-                //previousText="Предыдущая"
-                //nextText="Следующая"
-                //pageText="Страница"
-                //ofText="из"
-                //rowsText="строк"
-                //pageSizeOptions={[10, 15, 20, 25, 50]}
-            />
+            <Fragment>
+                { hasError ? <Error/> : "" }
+                <ReactTable 
+                    columns={columns} 
+                    data={equipment} 
+                    loading={isLoading}
+                    sortable={true}
+                    showPagination={false}
+                    pageSize={equipment.length}
+                    loadingText="Поиск оборудования..."
+                    noDataText={equipment.length === 0 ? "Оборудование не найдено." : ""}
+                    //previousText="Предыдущая"
+                    //nextText="Следующая"
+                    //pageText="Страница"
+                    //ofText="из"
+                    //rowsText="строк"
+                    //pageSizeOptions={[10, 15, 20, 25, 50]}
+                />
+            </Fragment>
         </div>
     );
 }

@@ -1,10 +1,12 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { Fragment, useState, useEffect } from 'react';
 import Select from 'react-select';
+import Error from '../Error';
 import axios from 'axios';
 
 function SelectSection(props) {
     const [sections, setSections] = useState({});
     const [isLoading, setIsLoading] = useState(false);
+    const [hasError, setHasError] = useState(false);
 
     useEffect(() => {
         const fetchSections = async () => {
@@ -14,10 +16,11 @@ function SelectSection(props) {
                     .then(response => {
                         const result = response.data;
                         setSections(result);
-                    })
-                    .catch(() => setSections());
+                    });
             } catch (e) {
-                console.error(e);
+                setSections();
+                setHasError(true);
+                console.log(e);
             } finally {
                 setIsLoading(false);
             }
@@ -31,12 +34,18 @@ function SelectSection(props) {
     }
 
     return (
-        <Select
-            options={sections}
-            isLoading={isLoading}
-            placeholder="Выберите сечение..."
-            noOptionsMessage={() => "Сечения отсутствуют."}
-            onChange={handleChangeSelect}/>
+        <Fragment>
+            {
+                hasError ? <Error/> : ""
+            }
+            <Select
+                options={sections}
+                isLoading={isLoading}
+                placeholder="Выберите сечение..."
+                noOptionsMessage={() => "Сечения отсутствуют."}
+                onChange={handleChangeSelect}/>
+
+        </Fragment>
     );
 };
 

@@ -1,10 +1,12 @@
 ﻿import React, { Fragment, useState, useEffect } from 'react';
 import { Button, Spinner } from 'react-bootstrap';
+import Error from '../Error';
 import axios from 'axios';
 import './CalcButton.css'
 
 function CalcButton(props) {
     const [isLoading, setLoading] = useState(false);
+    const [hasError, setHasError] = useState(false);
 
     useEffect(() => {
         if (isLoading) {
@@ -24,12 +26,14 @@ function CalcButton(props) {
                     });
                 } catch (e) {
                     console.error(e);
+                    setHasError(true);
                 } finally {
                     setLoading(false);
                     props.onLoading(false);
                 }
             };
             fetchFlowValue();
+            setHasError(false);
         }
     }, [isLoading]);
 
@@ -40,6 +44,7 @@ function CalcButton(props) {
 
     return (
         <Fragment>
+            { hasError ? <Error/> : "" }
             <Button
                 variant="primary"
                 disabled={!isLoading && props.bitMask ? false : true}
