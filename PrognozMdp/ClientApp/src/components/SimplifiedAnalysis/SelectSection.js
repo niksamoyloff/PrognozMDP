@@ -1,32 +1,26 @@
 ﻿import React, { Fragment, useState, useEffect } from 'react';
 import Select from 'react-select';
 import Error from '../Error';
-import axios from 'axios';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchSections } from '../../store/actions';
 
 function SelectSection(props) {
-    const [sections, setSections] = useState({});
-    const [isLoading, setIsLoading] = useState(false);
+    //const [sections, setSections] = useState({});
+    //const [isLoading, setIsLoading] = useState(false);
     const [hasError, setHasError] = useState(false);
+    const dispatch = useDispatch();
+    const sections = useSelector(state => state.sections.items);
+    const loading = useSelector(state => state.sections.loading);
+    //const { loading } = useSelector(state => state.loading);
 
     useEffect(() => {
-        const fetchSections = async () => {
-            setIsLoading(true);
-            try {
-                const response = await axios.get('SimplifiedAnalysis/GetSections')
-                    .then(response => {
-                        const result = response.data;
-                        setSections(result);
-                    });
-            } catch (e) {
-                setSections();
-                setHasError(true);
-                console.log(e);
-            } finally {
-                setIsLoading(false);
-            }
+        const loadSections = async () => {
+            await dispatch(fetchSections());
+            console.log(sections);
         };
-        fetchSections();
-    }, []);
+        loadSections();
+        //dispatch(fetchSections());
+    }, [dispatch]);
 
     function handleChangeSelect(sect) {
         props.onChangeSectionId(sect.value);
@@ -40,7 +34,7 @@ function SelectSection(props) {
             }
             <Select
                 options={sections}
-                isLoading={isLoading}
+                isLoading={loading}
                 placeholder="Выберите сечение..."
                 noOptionsMessage={() => "Сечения отсутствуют."}
                 onChange={handleChangeSelect}/>
@@ -50,19 +44,3 @@ function SelectSection(props) {
 };
 
 export default SelectSection;
-
-//useEffect(() => {
-//    const fetchSections = async () => {
-//        setIsLoading(true);
-//        const response = await window.fetch('SimplifiedAnalysis/GetSections',{
-//            headers: {
-//                'Content-Type': 'application/json'
-//            }
-//        });
-//        const result = await response.json();
-//        setSections(result);
-//        setIsLoading(false);
-//        return result;
-//    };
-//    fetchSections();
-//}, []);
