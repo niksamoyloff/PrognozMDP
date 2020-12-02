@@ -3,44 +3,30 @@ import axios from 'axios';
 import ReactTable from 'react-table-6';
 import StateToggleButton from './StateToggleButton';
 import Error from '../Error';
+import { useDispatch, useSelector } from 'react-redux';
+import { getBitMask, getDisabledEq } from '../../store/actions/calculation';
 import 'react-table-6/react-table.css';
 import './EquipmentTable.css';
 
 function EquipmentTable(props) {
-    const [equipment, setEquipment] = useState([]);
-    const [isLoading, setLoading] = useState(false);
-    const [hasError, setHasError] = useState(false);
     const states = [
         { name: "Вкл", value: "1" },
         { name: "Откл", value: "0" }
     ];
     const variants = ["outline-success","outline-danger"];
 
+    const dispatch = useDispatch();
+    const { equipment, loading, hasError } = useSelector(
+        state => ({
+            hasError: state.equipmentReducer.error !== null ? true : false,
+            equipment: state.equipmentReducer.items,
+            loading: state.equipmentReducer.loading
+        })
+    );
+
     useEffect(() => {
-        const fetchEquipment = async () => {
-            setLoading(true);
-            try {
-                const response = await axios.get('SimplifiedAnalysis/GetEquipmentBySection',
-                    {
-                        params: { sectionId: props.sectionId }
-                    })
-                    .then(response => {
-                        const result = response.data;
-                        setEquipment(result);
-                        sendBitMaskToProps(result);
-                    });
-            } catch (e) {
-                setEquipment([]);
-                setHasError(true);
-                console.error(e);
-            } finally {
-                setLoading(false);
-            }
-        };
-        if (props.sectionId !== null && props.sectionId !== "")
-            fetchEquipment();
-        setHasError(false);
-    }, [props.sectionId]);
+        sendBitMask(equipment);
+    }, [loading, dispatch]);
 
     function handleChangeEquipmentState(row) {
         row.original.isEnabled = !row.original.isEnabled;
@@ -50,21 +36,22 @@ function EquipmentTable(props) {
              isEnabled: row.original.isEnabled
         };
         items[row.original.nameEq] = item;
-        setEquipment(items);
-        sendBitMaskToProps(items);
+        sendBitMask(items);
         sendDisabledEq(equipment);
     }
 
     function sendDisabledEq(items) {
-        props.onChangeDisabledEq(items
+        const disabledEq = items
             .filter((item) => !item.isEnabled)
             .map(item => item.typeEq + " " + item.nameEq)
-            .join(", "));
+            .join(", ");
+        dispatch(getDisabledEq(disabledEq));
     }
-    function sendBitMaskToProps(items) {
-        props.onChangeBitMask(items.map((item) => {
+    function sendBitMask(items) {
+        const bitMask = items.map((item) => {
             return item.isEnabled ? "1" : "0";
-        }).join(""));
+        }).join("");
+        dispatch(getBitMask(bitMask));
     }
 
     const columns = useMemo(
@@ -101,7 +88,7 @@ function EquipmentTable(props) {
             }   
             ],
         [
-            equipment.length, 
+            loading,
             states,
             variants
         ]
@@ -114,7 +101,7 @@ function EquipmentTable(props) {
                 <ReactTable 
                     columns={columns} 
                     data={equipment} 
-                    loading={isLoading}
+                    loading={loading}
                     sortable={true}
                     showPagination={false}
                     pageSize={equipment.length}
