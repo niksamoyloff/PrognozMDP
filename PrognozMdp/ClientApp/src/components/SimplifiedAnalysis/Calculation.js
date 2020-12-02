@@ -1,38 +1,30 @@
-﻿import React, { Fragment, useState } from 'react';
+﻿import React, { Fragment, useState, useEffect } from 'react';
 import DtPicker from './DtPicker';
 import StateToggleButton from './StateToggleButton';
 import CalcButton from './CalcButton';
+import { useDispatch } from 'react-redux';
+import { getFlowName } from '../../store/actions/calculation';
 import './Calculation.css';
 import './DtPicker.css';
 
 function Calculation(props) {
-    const [flow, setFlow] = useState("1");
-    const [dt, setDt] = useState(new Date());
-    //const [flowWithVals, setFlowWithVals] = useState();
-    const [isLoading, setLoading] = useState(false);
+    const dispatch = useDispatch();
+    const [flow, setFlow] = useState(true);
     const flows = [
         { name: "МДП", value: "1" },
         { name: "АДП", value: "0" }
     ];
+    const flowName = flow ? "mdp" : "adp";
     const variants = ["outline-warning","outline-danger"];
 
-    function handleChangeDt(newDt) {
-        setDt(newDt);
-    }
 
-    function handleGetFlow(newFlow) {
-        if (isLoading) {
-            props.onChangeFlowWithVals(newFlow);
-        }
-    }
+    useEffect(() => {
+        dispatch(getFlowName(flowName));
+    }, [flow, dispatch]);
 
-    function handleOnLoading(loading) {
-        setLoading(loading);
-        props.onLoading(loading);
-        if (isLoading) {
-            props.onChangeDt(dt);
-            props.onChangeFlow(flow ? "МДП" : "АДП");
-        }
+
+    function handleChangeFlow() {
+        setFlow(!flow);
     }
 
     return (
@@ -44,22 +36,15 @@ function Calculation(props) {
                         key="select-flow"
                         radios={flows}
                         variants={variants}
-                        defaultState={true} 
-                        onChangeState={() => setFlow(!flow)}
+                        defaultState={flow} 
+                        onChangeState={handleChangeFlow}
                     />
                 </div>
                 <div className="select-time">
-                    <DtPicker onChangeDt={handleChangeDt}/>
+                    <DtPicker />
                 </div>
                 <div className="calc-btn">
-                    <CalcButton 
-                        flow={flow ? "mdp" : "adp"}
-                        dt={dt}
-                        sectId={props.sectionId}
-                        bitMask={props.bitMask}
-                        onGetFlow={handleGetFlow}
-                        onLoading={handleOnLoading}
-                    />
+                    <CalcButton />
                 </div>
             </div>
         </Fragment>
