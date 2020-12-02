@@ -2,29 +2,32 @@
 import Select from 'react-select';
 import Error from '../Error';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchSections } from '../../store/actions';
+import { fetchSections } from '../../store/actions/sections';
+import { fetchEquipment } from '../../store/actions/equipment';
+import { getCurrentSection } from '../../store/actions/calculation';
 
-function SelectSection(props) {
-    //const [sections, setSections] = useState({});
-    //const [isLoading, setIsLoading] = useState(false);
-    const [hasError, setHasError] = useState(false);
+function SelectSection() {
     const dispatch = useDispatch();
-    const sections = useSelector(state => state.sections.items);
-    const loading = useSelector(state => state.sections.loading);
-    //const { loading } = useSelector(state => state.loading);
+    const { sections, loading, hasError } = useSelector(
+        state => ({
+            hasError: state.sectionsReducer.error !== null ? true : false,
+            sections: state.sectionsReducer.items,
+            loading: state.sectionsReducer.loading
+        })
+    );
 
     useEffect(() => {
         const loadSections = async () => {
             await dispatch(fetchSections());
-            console.log(sections);
         };
         loadSections();
-        //dispatch(fetchSections());
     }, [dispatch]);
 
     function handleChangeSelect(sect) {
-        props.onChangeSectionId(sect.value);
-        props.onChangeSection(sect.label);
+        dispatch(fetchEquipment(sect.value));
+        dispatch(getCurrentSection(sect));
+        //props.onChangeSectionId(sect.value);
+        //props.onChangeSection(sect.label);
     }
 
     return (
