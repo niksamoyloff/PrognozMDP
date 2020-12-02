@@ -1,8 +1,12 @@
 ﻿import { combineReducers } from 'redux';
-import sections from './sections';
+import sectionsReducer from './sections';
+import equipmentReducer from './equipment';
+import calculationReducer from './calculation';
 
 const rootReducer = combineReducers({
-    sections
+    sectionsReducer,
+    equipmentReducer,
+    calculationReducer
 });
 
 export default rootReducer;
