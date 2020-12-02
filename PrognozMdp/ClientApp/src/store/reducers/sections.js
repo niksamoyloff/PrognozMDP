@@ -2,11 +2,11 @@
 
 const initialState = {
     loading: false,
-    items: [],
+    items: {},
     error: null
 }
 
-export default function sections(state = initialState, action) {
+export default function sectionsReducer(state = initialState, action) {
     switch (action.type) {
         case types.FETCH_SECTIONS_STARTED:
             return {
@@ -18,13 +18,14 @@ export default function sections(state = initialState, action) {
                 ...state,
                 loading: false,
                 error: null,
-                items: [...state.items, action.payload]
+                items: action.payload.data
             };
         case types.FETCH_SECTIONS_FAILURE:
             return {
                 ...state,
                 loading: false,
-                error: action.payload.error
+                error: action.payload.error,
+                items: []
             };
         default:
             return state;
