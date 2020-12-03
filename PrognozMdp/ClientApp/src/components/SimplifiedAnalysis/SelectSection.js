@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchSections } from '../../store/actions/sections';
 import { fetchEquipment } from '../../store/actions/equipment';
 import { getCurrentSection } from '../../store/actions/calculation';
+import './SelectSection.css';
 
 function SelectSection() {
     const dispatch = useDispatch();
@@ -40,7 +41,8 @@ function SelectSection() {
                 isLoading={loading}
                 placeholder="Выберите сечение..."
                 noOptionsMessage={() => "Сечения отсутствуют."}
-                onChange={handleChangeSelect}/>
+                onChange={handleChangeSelect}
+                className="react-select-container" />
 
         </Fragment>
     );
