@@ -1,22 +1,19 @@
-import React, { Component } from 'react';
-import { Route } from 'react-router';
+import React from 'react';
+import { Route, Switch } from 'react-router';
 import { Layout } from './components/Layout';
-import Home from './components/SimplifiedAnalysis/Home';
-import { FetchData } from './components/FetchData';
-import { Counter } from './components/Counter';
-
+import SimplifiedRoot from './components/SimplifiedAnalysis/SimplifiedRoot';
+import DetailedRoot from './components/DetailedAnalysis/DetailedRoot';
 import './custom.css'
 
-export default class App extends Component {
-  static displayName = App.name;
-
-  render () {
+function App() {
     return (
       <Layout>
-        <Route exact path='/' component={Home} />
-        <Route path='/counter' component={Counter} />
-        <Route path='/fetch-data' component={FetchData} />
+        <Switch>
+            <Route exact path={['/', '/simplified']} component={SimplifiedRoot} />
+            <Route exact path='/detailed' component={DetailedRoot} />
+        </Switch>
       </Layout>
     );
-  }
 }
+
+export default App;
