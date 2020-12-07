@@ -343,3 +343,4 @@ healthchecksdb
 /PrognozMdp/Interop.OICDAC.dll
 /PrognozMdp/.config/dotnet-tools.json
 /PrognozMdp/ClientApp/.eslintcache
+/PrognozMdp/package-lock.json
