@@ -27,8 +27,6 @@ function SelectSection() {
     function handleChangeSelect(sect) {
         dispatch(fetchEquipment(sect.value));
         dispatch(getCurrentSection(sect));
-        //props.onChangeSectionId(sect.value);
-        //props.onChangeSection(sect.label);
     }
 
     return (

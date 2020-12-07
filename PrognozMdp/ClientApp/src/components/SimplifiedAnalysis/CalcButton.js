@@ -1,15 +1,12 @@
-﻿import React, { Fragment, useState, useEffect } from 'react';
+﻿import React, { Fragment } from 'react';
 import { Button, Spinner } from 'react-bootstrap';
 import Error from '../Error';
-import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchFlowWithValues } from '../../store/actions/calculation';
 import './CalcButton.css'
 
-function CalcButton(props) {
+function CalcButton() {
     const dispatch = useDispatch();
-    //const [isLoading, setLoading] = useState(false);
-    //const [hasError, setHasError] = useState(false);
 
     const { loading, flowName, section, bitMask, isCurrentDt, dt, hasError } = useSelector(
         state => ({
@@ -23,23 +20,7 @@ function CalcButton(props) {
         })
     );
 
-    //useEffect(() => {
-    //    if (loading) {
-    //        const fetchFlowValue = async () => {
-    //            await dispatch(fetchFlowWithValues(
-    //                flowName,
-    //                section.value,
-    //                bitMask,
-    //                isCurrentDt ? new Date() : dt
-    //            ));
-    //        };
-    //        fetchFlowValue();
-    //    }
-    //}, [dispatch]);
-
     const handleClick = () => {
-         //setLoading(true);
-         //props.onLoading(true);
          const fetchFlowValue = async () => {
              await dispatch(fetchFlowWithValues(
                  flowName,

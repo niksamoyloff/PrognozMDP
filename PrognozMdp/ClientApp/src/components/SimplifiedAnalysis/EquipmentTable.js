@@ -1,5 +1,4 @@
-import React, { Fragment, useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
+import React, { Fragment, useEffect, useMemo } from 'react';
 import ReactTable from 'react-table-6';
 import StateToggleButton from './StateToggleButton';
 import Error from '../Error';
@@ -8,7 +7,7 @@ import { getBitMask, getDisabledEq } from '../../store/actions/calculation';
 import 'react-table-6/react-table.css';
 import './EquipmentTable.css';
 
-function EquipmentTable(props) {
+function EquipmentTable() {
     const states = [
         { name: "Вкл", value: "1" },
         { name: "Откл", value: "0" }
