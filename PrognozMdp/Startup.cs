@@ -61,31 +61,34 @@ namespace PrognozMdp
             app.UseStaticFiles();
             app.UseSpaStaticFiles();
 
+
+            app.UsePathBase("/prognozmdp-tst");
+
+            app.Use((context, next) =>
+            {
+                context.Request.PathBase = "/prognozmdp-tst";
+                return next();
+            });
+            app.UseMvc();
+
+            app.UseStaticFiles();
+            app.UseSpaStaticFiles();
+
             //app.UseMvc(routes =>
             //{
             //    if (env.IsDevelopment())
             //    {
             //        routes.MapRoute(
             //            name: "default",
-            //            template: "{controller}/{action=GetSections}");
+            //            template: "prognozmdp-tst/{controller}/{action=GetData}");
             //    }
             //    if (env.IsProduction())
             //    {
             //        routes.MapRoute(
             //            name: "default",
-            //            template: "{controller}/{action=GetSections}");
+            //            template: "{controller}/{action=GetData}");
             //    }                
             //});
-
-            app.UsePathBase("/prognozmdp");
-
-            app.Use((context, next) =>
-            {
-                context.Request.PathBase = "/prognozmdp";
-                return next();
-            });
-            app.UseMvc();
-
 
             app.UseSpa(spa =>
             {
