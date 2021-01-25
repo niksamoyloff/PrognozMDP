@@ -1,19 +1,20 @@
-﻿import React, { Fragment, useState, useEffect } from 'react';
+﻿import React, { Fragment, useState, useEffect, useCallback } from 'react';
 import Select from 'react-select';
 import Error from '../Error';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchSections } from '../../store/actions/sections';
-import { fetchEquipment } from '../../store/actions/equipment';
-import { getCurrentSection } from '../../store/actions/calculation';
+import { fetchSections } from '../../store/actions/simplified/sections';
+import { fetchEquipment } from '../../store/actions/simplified/equipment';
+import { setCurrentSection } from '../../store/actions/simplified/result';
 import './SelectSection.css';
 
 function SelectSection() {
     const dispatch = useDispatch();
-    const { sections, loading, hasError } = useSelector(
+    const { loading, sections, selectedSection, hasError } = useSelector(
         state => ({
-            hasError: state.sectionsReducer.error !== null ? true : false,
-            sections: state.sectionsReducer.items,
-            loading: state.sectionsReducer.loading
+            hasError: state.simplifiedSectionsReducer.error !== null ? true : false,
+            sections: state.simplifiedSectionsReducer.sections,
+            loading: state.simplifiedSectionsReducer.loading,
+            selectedSection: state.simplifiedResultReducer.section
         })
     );
 
@@ -26,7 +27,7 @@ function SelectSection() {
 
     function handleChangeSelect(sect) {
         dispatch(fetchEquipment(sect.value));
-        dispatch(getCurrentSection(sect));
+        dispatch(setCurrentSection(sect));
     }
 
     return (
@@ -37,6 +38,7 @@ function SelectSection() {
             <Select
                 options={sections}
                 isLoading={loading}
+                value={sections.find(({val}) => val === selectedSection)}
                 placeholder="Выберите сечение..."
                 noOptionsMessage={() => "Сечения отсутствуют."}
                 onChange={handleChangeSelect}

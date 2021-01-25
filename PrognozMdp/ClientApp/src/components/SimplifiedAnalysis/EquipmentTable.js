@@ -3,12 +3,12 @@ import ReactTable from 'react-table-6';
 import StateToggleButton from './StateToggleButton';
 import Error from '../Error';
 import { useDispatch, useSelector } from 'react-redux';
-import { getBitMask, getDisabledEq } from '../../store/actions/calculation';
+import { setBitMask, setDisabledEq } from '../../store/actions/simplified/result';
 import 'react-table-6/react-table.css';
 import './EquipmentTable.css';
 
 function EquipmentTable() {
-    const states = [
+    const radiosStates = [
         { name: "Вкл", value: "1" },
         { name: "Откл", value: "0" }
     ];
@@ -17,9 +17,9 @@ function EquipmentTable() {
     const dispatch = useDispatch();
     const { equipment, loading, hasError } = useSelector(
         state => ({
-            hasError: state.equipmentReducer.error !== null ? true : false,
-            equipment: state.equipmentReducer.items,
-            loading: state.equipmentReducer.loading
+            hasError: state.simplifiedEquipmentReducer.error !== null ? true : false,
+            equipment: state.simplifiedEquipmentReducer.items,
+            loading: state.simplifiedEquipmentReducer.loading
         })
     );
 
@@ -44,13 +44,13 @@ function EquipmentTable() {
             .filter((item) => !item.isEnabled)
             .map(item => item.typeEq + " " + item.nameEq)
             .join(", ");
-        dispatch(getDisabledEq(disabledEq));
+        dispatch(setDisabledEq(disabledEq));
     }
     function sendBitMask(items) {
         const bitMask = items.map((item) => {
             return item.isEnabled ? "1" : "0";
         }).join("");
-        dispatch(getBitMask(bitMask));
+        dispatch(setBitMask(bitMask));
     }
 
     const columns = useMemo(
@@ -78,8 +78,8 @@ function EquipmentTable() {
                 minWidth: 100,
                 width: 100,
                 Cell: (row) => <StateToggleButton 
-                                    key={row.index + '-state-button'} 
-                                    radios={states}
+                                    key={row.index + 'eq-state-button'} 
+                                    radios={radiosStates}
                                     variants={variants}
                                     size="sm"
                                     defaultState={row.original.isEnabled} 
@@ -87,9 +87,7 @@ function EquipmentTable() {
             }   
             ],
         [
-            loading,
-            states,
-            variants
+            loading
         ]
     );
 

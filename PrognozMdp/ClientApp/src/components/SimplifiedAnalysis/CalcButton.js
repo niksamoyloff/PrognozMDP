@@ -2,7 +2,7 @@
 import { Button, Spinner } from 'react-bootstrap';
 import Error from '../Error';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchFlowWithValues } from '../../store/actions/calculation';
+import { fetchFlowWithValues } from '../../store/actions/simplified/result';
 import './CalcButton.css'
 
 function CalcButton() {
@@ -10,13 +10,13 @@ function CalcButton() {
 
     const { loading, flowName, section, bitMask, isCurrentDt, dt, hasError } = useSelector(
         state => ({
-            loading: state.calculationReducer.loading,
-            flowName: state.calculationReducer.flowName,
-            section: state.calculationReducer.section,
-            bitMask: state.calculationReducer.bitMask,
-            isCurrentDt: state.calculationReducer.isCurrentDt,
-            dt: state.calculationReducer.dt,
-            hasError: state.calculationReducer.error !== null ? true : false
+            loading: state.simplifiedResultReducer.loading,
+            flowName: state.simplifiedResultReducer.flowName,
+            section: state.simplifiedResultReducer.section,
+            bitMask: state.simplifiedResultReducer.bitMask,
+            isCurrentDt: state.simplifiedResultReducer.isCurrentDt,
+            dt: state.simplifiedResultReducer.dt,
+            hasError: state.simplifiedResultReducer.error !== null ? true : false
         })
     );
 
