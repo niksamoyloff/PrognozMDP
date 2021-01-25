@@ -3,11 +3,11 @@ import DtPicker from './DtPicker';
 import StateToggleButton from './StateToggleButton';
 import CalcButton from './CalcButton';
 import { useDispatch } from 'react-redux';
-import { getFlowName } from '../../store/actions/calculation';
+import { setFlowName } from '../../store/actions/simplified/result';
 import './Calculation.css';
 import './DtPicker.css';
 
-function Calculation(props) {
+function Calculation() {
     const dispatch = useDispatch();
     const [flow, setFlow] = useState(true);
     const flows = [
@@ -19,7 +19,7 @@ function Calculation(props) {
 
 
     useEffect(() => {
-        dispatch(getFlowName(flowName));
+        dispatch(setFlowName(flowName));
     }, [flow, dispatch]);
 
 
