@@ -11,96 +11,84 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Configuration;
 using OICDAC;
+using PrognozMdp.Interfaces;
 
 namespace PrognozMdp.Services
 {
-    public class Oic
+    public class Oic : IDisposable
     {
         public string OicConnectionStringMainGroup { get; } 
         public string OicConnectionStringMainGroupReserve { get; }
         public string OicConnectionStringReserveGroup { get; }
         public Dictionary<string, string> OicParamsValues { get; set; }
 
-        private readonly IConfiguration _configuration;
         private DAC _dac;
         private OIRequest _request;
-        private RpnCalc _calc;
+        private ICalc _calc;
 
-        public Oic(IConfiguration configuration, DAC dac)
+        private static readonly EventWaitHandle _handle = new AutoResetEvent(false);
+
+        public Oic(IConfiguration configuration)
         {
-            _configuration = configuration;
-            _dac = dac;
-            _calc = new RpnCalc();
+            _dac = new DACClass();
             OicParamsValues = new Dictionary<string, string>();
-            OicConnectionStringMainGroup = _configuration.GetSection("ConnectionStrings").GetSection("oicConnectionStringMainGroup").Value;
-            OicConnectionStringMainGroupReserve = _configuration.GetSection("ConnectionStrings").GetSection("oicConnectionStringMainGroupReserve").Value;
-            OicConnectionStringReserveGroup = _configuration.GetSection("ConnectionStrings").GetSection("oicConnectionStringReserveGroup").Value;
+            OicConnectionStringMainGroup = configuration.GetSection("ConnectionStrings").GetSection("oicConnectionStringMainGroup").Value;
+            OicConnectionStringMainGroupReserve = configuration.GetSection("ConnectionStrings").GetSection("oicConnectionStringMainGroupReserve").Value;
+            OicConnectionStringReserveGroup = configuration.GetSection("ConnectionStrings").GetSection("oicConnectionStringReserveGroup").Value;
         }
-        private DataRowCollection GetDataBySqlQuery(string query)
+        public async Task<DataRowCollection> GetDataBySqlQueryAsync(string query)
         {
-            using (var sqlConnection = new SqlConnection(GetConnectionString()))
+            await using var sqlConnection = new SqlConnection(await GetConnectionStringAsync());
+            await using var sqlCommand = new SqlCommand(query, sqlConnection);
+            try
             {
-                using (var sqlCommand = new SqlCommand(query, sqlConnection))
-                {
-                    try
-                    {
-                        sqlConnection.Open();
-                        var sqlDataAdapter = new SqlDataAdapter(sqlCommand);
+                await sqlConnection.OpenAsync();
+                var sqlDataAdapter = new SqlDataAdapter(sqlCommand);
 
-                        var ds = new DataSet();
-                        sqlDataAdapter.Fill(ds);
+                var ds = new DataSet();
+                sqlDataAdapter.Fill(ds);
 
-                        return ds.Tables[0].Rows;
-                    }
-                    catch
-                    {
-                        return null;
-                    }
-                }
+                return ds.Tables[0].Rows;
+            }
+            catch
+            {
+                return null;
             }
         }
 
-        private string GetConnectionString()
+        public async Task<string> GetConnectionStringAsync()
         {
             string host;
 
-            if ((host = GetActiveHost(OicConnectionStringMainGroup)) != null)
+            if ((host = await GetActiveHostAsync(OicConnectionStringMainGroup)) != null)
             {
                 return GetConnectionStringByHost(host);
             }
 
-            if ((host = GetActiveHost(OicConnectionStringMainGroupReserve)) != null)
+            if ((host = await GetActiveHostAsync(OicConnectionStringMainGroupReserve)) != null)
             {
                 return GetConnectionStringByHost(host);
             }
 
-            if ((host = GetActiveHost(OicConnectionStringReserveGroup)) != null)
-            {
-                return GetConnectionStringByHost(host);
-            }
-
-            return null;
+            return (host = await GetActiveHostAsync(OicConnectionStringReserveGroup)) != null ? GetConnectionStringByHost(host) : null;
         }
-        private static string GetActiveHost(string connectionString)
+        private static async Task<string> GetActiveHostAsync(string connectionString)
         {
-            using (var sqlConnection = new SqlConnection(connectionString))
+            await using var sqlConnection = new SqlConnection(connectionString);
+            await using var sqlCommand = new SqlCommand("select oik.dbo.fn_getmainoikservername()", sqlConnection);
+            try
             {
-                using (var sqlCommand = new SqlCommand("select oik.dbo.fn_getmainoikservername()", sqlConnection))
-                {
-                    try
-                    {
-                        sqlConnection.Open();
-                        return sqlCommand.ExecuteScalar().ToString();
-                    }
-                    catch (Exception e)
-                    {
-                        var msg = e.ToString();
-                        return msg;
-                    }
-                }
+                await sqlConnection.OpenAsync();
+                return sqlCommand.ExecuteScalar().ToString();
+            }
+            catch (Exception e)
+            {
+                var msg = e.ToString();
+                return msg;
             }
         }
-        private string GetConnectionStringByHost(string host)
+
+        public string GetConnectionStringByHost(string host)
         {
             var uHost = host.ToUpper();
             if (uHost == new OicConnectionStringParser(OicConnectionStringMainGroup).Server.ToUpper())
@@ -121,16 +109,16 @@ namespace PrognozMdp.Services
             return null;
         }
 
-        public DataRowCollection GetSectionsFromOic()
+        public async Task<DataRowCollection> GetSectionsFromOicAsync()
         {
             var query = new StringBuilder("SELECT ID, RTRIM (LTRIM (Name)) AS Name " +
                                           "FROM [OIK].[dbo].[psSect] " +
                                           "ORDER BY Name");
-            var sections = GetDataBySqlQuery(query.ToString());
+            var sections = await GetDataBySqlQueryAsync(query.ToString());
             return sections;
         }
 
-        public DataRowCollection GetEquipmentBySectionFromOic(string sectionId)
+        public async Task<DataRowCollection> GetEquipmentBySectionFromOicAsync(string sectionId)
         {
             if (string.IsNullOrEmpty(sectionId))
                 return null;
@@ -144,11 +132,11 @@ namespace PrognozMdp.Services
                                           "LEFT JOIN DefTS AS s ON efoi.OI = 'S' AND efoi.OIID = s.ID " +
                                           $"WHERE bg.ID = {sectionId}");
             
-            var sections = GetDataBySqlQuery(query.ToString());
+            var sections = await GetDataBySqlQueryAsync(query.ToString());
             return sections;
         }
 
-        public Dictionary<string, string> GetSchemeByBitMask(string sectionId, string mask)
+        public async Task<Dictionary<string, string>> GetSchemeByBitMaskAsync(string sectionId, string mask)
         {
             if (string.IsNullOrEmpty(mask) || string.IsNullOrEmpty(sectionId))
                 throw new ArgumentNullException();
@@ -161,45 +149,43 @@ namespace PrognozMdp.Services
                                           "FROM [OIK].[dbo].[psSchem] " +
                                           $"WHERE IDSect = {sectionId} AND Mask = {maskToQuery}");
             
-            var data = GetDataBySqlQuery(query.ToString());
+            var dataRowColl = await GetDataBySqlQueryAsync(query.ToString());
             var scheme = new Dictionary<string, string>();
-            if (data != null && data.Count > 0)
+            if (dataRowColl != null && dataRowColl.Count > 0)
             {
-                scheme = data[0].Table.Columns
+                scheme = dataRowColl[0].Table.Columns
                     .Cast<DataColumn>()
-                    .ToDictionary(c => c.ColumnName, c => data[0][c].ToString());
+                    .ToDictionary(c => c.ColumnName, c => dataRowColl[0][c].ToString());
             }
             return scheme;
         }
 
-        public void GetParamsByFormulaId(string formulaId, DateTime? dt)
+        public async Task<string[]> GetParamsByFormulaIdAsync(string formulaId)
         {
             var query = new StringBuilder("SELECT CONCAT(OI, SID) AS Prmtr " +
                                           "FROM [OIK].[dbo].[TIFormulasR] " +
                                           $"WHERE FID = {formulaId}");
 
-            var data = GetDataBySqlQuery(query.ToString());
-            var oicFormulaParams = data.Cast<DataRow>().Select(row => row.ItemArray[0].ToString()).ToArray();
-            OicParamsValues?.Clear();
-            GetOicParamsValues(oicFormulaParams, dt);
+            var dataRowColl = await GetDataBySqlQueryAsync(query.ToString());
+            var oicFormulaParams = dataRowColl.Cast<DataRow>().Select(row => row.ItemArray[0].ToString()).ToArray();
+            return oicFormulaParams;
         }
 
-        public string GetFormulaById(string formulaId)
+        public async Task<string> GetFormulaByIdAsync(string formulaId)
         {
             var query = new StringBuilder("SELECT [Frml] FROM [OIK].[dbo].[TIFormulas] "+
                                           $"WHERE ID = {formulaId}");
 
-            var data = GetDataBySqlQuery(query.ToString());
-            var formula = data.Cast<DataRow>().Select(row => row.ItemArray[0].ToString()).FirstOrDefault();
+            var dataRowColl = await GetDataBySqlQueryAsync(query.ToString());
+            var formula = dataRowColl.Cast<DataRow>().Select(row => row.ItemArray[0].ToString()).FirstOrDefault();
             return formula;
         }
 
         public double CalcFlowByFormula(string formula)
         {
-            //GetOicParamsValues(formulaParams, dt);
-            Thread.Sleep(2000);
-            var flowValue = _calc.Calculate(formula, OicParamsValues);
-            return flowValue;
+            _calc = new RpnCalc(formula, OicParamsValues);
+            _calc.Calculate();
+            return _calc.Result;
         }
 
         public void CreateConnection()
@@ -230,12 +216,20 @@ namespace PrognozMdp.Services
             }
         }
 
-        private void CreateRequest()
+        public void CreateRequest()
         {
             _request = _dac.OIRequests.Add();
             _request.OnGetResult += Request_OnGetResult;
+            _request.OnReceivedAllData += Request_OnReceivedAllData;
         }
-        private void StopRequest()
+
+        private void Request_OnReceivedAllData()
+        {
+            _handle.Set();
+            CloseConnection();
+        }
+
+        public void StopRequest()
         {
             if (_dac.OIRequests.Count > 0)
             {
@@ -251,14 +245,14 @@ namespace PrognozMdp.Services
             else
                 OicParamsValues[DataSource] = Data.ToString();
         }
-        public void GetOicParamsValues(string[] oicParams, DateTime? dt)
+        public void SetOicParamsValues(string[] oicParams, DateTime? dt)
         {
             CreateConnection();
             if (!_dac.Connection.Connected)
                 return;
-            OicParamsValues?.Clear();
+            OicParamsValues.Clear();
             StopRequest();
-
+            
             if (oicParams.Length > 0)
             {
                 CreateRequest();
@@ -266,12 +260,12 @@ namespace PrognozMdp.Services
                 {
                     OIRequestItem requestItem = _request.AddOIRequestItem();
                     requestItem.IsLocalTime = true;
-                    requestItem.KindRefresh = KindRefreshEnum.kr_ActualData;
+                    requestItem.KindRefresh = KindRefreshEnum.kr_RequiredTime;
                     requestItem.DataSource = param;
                     requestItem.TimeStart = dt ?? DateTime.Now;
-                    requestItem.TimeStop = dt ?? DateTime.Now;
                 }
                 _request.Start();
+                _handle.WaitOne();
             }
         }
 
@@ -281,11 +275,11 @@ namespace PrognozMdp.Services
         }
 
         #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
+        private bool _disposedValue; // To detect redundant calls
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposedValue)
+            if (!_disposedValue)
             {
                 if (disposing)
                 {
@@ -302,7 +296,7 @@ namespace PrognozMdp.Services
                 // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
                 // TODO: set large fields to null.
 
-                disposedValue = true;
+                _disposedValue = true;
             }
         }
 
