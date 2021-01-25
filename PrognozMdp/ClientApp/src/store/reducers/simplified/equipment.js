@@ -1,4 +1,4 @@
-﻿import * as types from '../constants/ActionTypes';
+﻿import * as types from '../../constants/ActionTypes';
 
 const initialState = {
     loading: false,
@@ -6,7 +6,7 @@ const initialState = {
     error: null
 }
 
-export default function equipmentReducer(state = initialState, action) {
+export default function simplifiedEquipmentReducer(state = initialState, action) {
     switch (action.type) {
         case types.FETCH_EQUIPMENT_STARTED:
             return {

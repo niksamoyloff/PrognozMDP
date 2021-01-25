@@ -1,4 +1,4 @@
-﻿import * as types from '../constants/ActionTypes';
+﻿import * as types from '../../constants/ActionTypes';
 
 const initialState = {
     loading: false,
@@ -12,30 +12,30 @@ const initialState = {
     section: null
 }
 
-export default function calculationReducer(state = initialState, action) {
+export default function simplifiedResultReducer(state = initialState, action) {
     switch (action.type) {
-        case types.GET_BIT_MASK:
+        case types.SET_BIT_MASK:
             return {
                 ...state, 
                 bitMask: action.payload.bitMask
             };
-        case types.GET_CURRENT_SECTION:
+        case types.SET_CURRENT_SECTION:
             return {
                 ...state,
                 section: action.payload.section
             }
-        case types.GET_DISABLED_EQUIPMENT:
+        case types.SET_DISABLED_EQUIPMENT:
             return {
                 ...state,
                 disabledEq: action.payload.disabledEq
             }
-        case types.GET_DATETIME:
+        case types.SET_DATETIME:
             return {
                 ...state,
                 dt: action.payload.dt,
                 isCurrentDt: action.payload.isCurrentDt
             }
-        case types.GET_FLOW_NAME:
+        case types.SET_FLOW_NAME:
             return {
                 ...state,
                 flowName: action.payload.name

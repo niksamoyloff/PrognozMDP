@@ -1,12 +1,12 @@
-﻿import * as types from '../constants/ActionTypes';
+﻿import * as types from '../../constants/ActionTypes';
 
 const initialState = {
     loading: false,
-    items: {},
+    sections: [],
     error: null
 }
 
-export default function sectionsReducer(state = initialState, action) {
+export default function simplifiedSectionsReducer(state = initialState, action) {
     switch (action.type) {
         case types.FETCH_SECTIONS_STARTED:
             return {
@@ -18,14 +18,14 @@ export default function sectionsReducer(state = initialState, action) {
                 ...state,
                 loading: false,
                 error: null,
-                items: action.payload.data
+                sections: action.payload.data
             };
         case types.FETCH_SECTIONS_FAILURE:
             return {
                 ...state,
                 loading: false,
                 error: action.payload.error,
-                items: []
+                sections: []
             };
         default:
             return state;
