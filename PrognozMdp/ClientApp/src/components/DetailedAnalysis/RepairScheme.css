@@ -1,4 +1,52 @@
 ﻿.container-repair-scheme {
-    margin-top: 60px;
+    margin-top: 56px;
     padding: 0;
+    position: relative;
+}
+.clicked {
+    stroke: red !important;
+}
+
+#schemeSvg {
+    position: relative;
+}
+
+.accordion {
+    top: 60px;
+    right: 10px;
+    position: fixed;
+}
+
+.card {
+    overflow: visible !important;
+}
+
+.card-header {
+    padding: 6px 6px;
+    background-color: lightgrey;
+}
+.card-header button {
+    float: right;
+}
+
+.card-body {
+    padding: 1rem;
+    width: 500px;
+}
+
+.card-body .select-time {
+    height: 29px;
+    margin-bottom: 0.5rem;
+}
+
+.card-body .calc-btn {
+    margin: 0.5rem 0;
+}
+
+.card-body .form-check {
+    padding-top: 3px;
+}
+
+.card .table-responsive {
+    max-height: calc(100vh - 250px);
 }
