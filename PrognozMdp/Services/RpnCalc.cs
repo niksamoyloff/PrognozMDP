@@ -4,21 +4,32 @@ using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using PrognozMdp.Interfaces;
 
 namespace PrognozMdp.Services
 {
     /// <summary>
     /// Calculator for OIC formula in Reverse Polish notation
     /// </summary>
-    public class RpnCalc
+    public class RpnCalc : ICalc
     {
-        public double Calculate(string formula, Dictionary<string, string> paramsDict)
+        public double Result { get; set; }
+        private string Formula { get; }
+        private Dictionary<string, string> ParamsDict { get; }
+
+        public RpnCalc(string formula, Dictionary<string, string> paramsDict)
+        {
+            Formula = formula;
+            ParamsDict = paramsDict;
+        }
+        public void Calculate()
         {
             var stack = new Stack<double>();
             var aliases = new Dictionary<string, double>();
             var paramCount = 0;
             IFormatProvider formatter = new NumberFormatInfo { NumberDecimalSeparator = "." };
-            foreach (var element in formula.Trim().Split(' ')) {
+            var splitFormula = Formula.Trim().Split(' ');
+            foreach (var element in splitFormula) {
                 switch (element) {
                     //A+B
                     case "+": {
@@ -263,7 +274,8 @@ namespace PrognozMdp.Services
                     }
                     //EXIT
                     case ")":
-                        return stack.Pop();
+                        Result = stack.Pop();
+                        return;
                     //Aliases D[1..N]V and D[1..N]F
                     case var expression when new Regex(@"\b[D]\d+[F,V]").IsMatch(expression):
                     {
@@ -280,7 +292,7 @@ namespace PrognozMdp.Services
                     //Parameters [S,I,..][1..N]V
                     case var expression when new Regex(@"[\wА-ЯA-Z]{1,2}\d+[V]").IsMatch(expression):
                     {
-                        stack.Push(Convert.ToDouble(paramsDict[expression.Remove(expression.Length - 1)]));
+                        stack.Push(Convert.ToDouble(ParamsDict[expression.Remove(expression.Length - 1)]));
                         break;
                     }
                     //A=B
@@ -356,12 +368,11 @@ namespace PrognozMdp.Services
                 }
             }
 
-            if (stack.Count == 1)
-                return stack.Pop();
-            return 0;
+            if (stack.Count != 1) return;
+            Result = stack.Pop();
         }
 
-        public double LagrangeInterpolation(double x, double[] xd, double[] yd)
+        private static double LagrangeInterpolation(double x, double[] xd, double[] yd)
         {
             if (xd.Length != yd.Length)
             {
