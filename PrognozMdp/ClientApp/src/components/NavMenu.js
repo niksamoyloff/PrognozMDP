@@ -1,54 +1,52 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import { Collapse, Container, Nav, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } from 'reactstrap';
-//import { Navbar, Nav } from 'react-bootstrap';
 import { NavLink as RRNavLink, Link } from 'react-router-dom';
+import { DetailedAnalysisMode } from './DetailedAnalysis/DetailedAnalysisMode';
 import './NavMenu.css';
 
-export class NavMenu extends Component {
-  static displayName = NavMenu.name;
+export function NavMenu() {
+    const [collapsed, setCollapsed] = useState(true);
+    const [isDetailed, setIsDetailed] = useState(false);
 
-  constructor (props) {
-    super(props);
+    const toggleNavbar = () => {
+        setCollapsed(!collapsed);
+    }
 
-    this.toggleNavbar = this.toggleNavbar.bind(this);
-    this.state = {
-      collapsed: true
-    };
-  }
-
-  toggleNavbar () {
-    this.setState({
-      collapsed: !this.state.collapsed
-    });
-  }
-
-  render () {
-      const checkActive = (match, location) => {
-          if(!location) return false;
-          const {pathname} = location;
-          console.log(pathname);
-          return pathname === "/" || pathname === "/simplified";
-      }
+    const checkActive = (match, location) => {
+        if(!location) return false;
+        const {pathname} = location;
+        if (pathname === "/detailed") {
+            setIsDetailed(true);
+            return false;
+        }
+        else if (pathname === "/" || pathname === "/simplified") {
+            setIsDetailed(false);
+            return true;
+        }
+        return false;
+    }
 
     return (
-      <header>
-          <Navbar expand="lg" color="dark" fixed="top" dark>
-              <Container fluid>
-                  <NavbarBrand tag={Link} to="/">Прогноз МДП|АДП</NavbarBrand>
-                  <NavbarToggler onClick={this.toggleNavbar} className="mr-2" />
-                  <Collapse isOpen={!this.state.collapsed} navbar>
-                      <Nav className="mr-auto" navbar>
-                          <NavItem>
-                              <NavLink to="/simplified" isActive={checkActive} tag={RRNavLink}>Упрощенный анализ</NavLink>
-                          </NavItem>
-                          <NavItem>
-                              <NavLink to="/detailed" tag={RRNavLink}>Подробный анализ</NavLink>
-                          </NavItem>  
-                      </Nav>
-                  </Collapse>
-              </Container>
-          </Navbar>
-      </header>
+        <header>
+            <Navbar expand="lg" color="dark" fixed="top" dark>
+                <Container fluid>
+                    <NavbarBrand tag={Link} to="/">Прогноз МДП|АДП</NavbarBrand>
+                    <NavbarToggler onClick={toggleNavbar} className="mr-2" />
+                    <Collapse isOpen={!collapsed} navbar>
+                        <Nav className="mr-auto" navbar>
+                            <NavItem>
+                                <NavLink to="/simplified" isActive={checkActive} tag={RRNavLink}>Упрощенный анализ</NavLink>
+                            </NavItem>
+                            <NavItem>
+                                <NavLink to="/detailed" tag={RRNavLink}>Подробный анализ</NavLink>
+                            </NavItem> 
+                            <NavItem>
+                                <DetailedAnalysisMode isDetailed={isDetailed}/>
+                            </NavItem>
+                        </Nav>
+                    </Collapse>
+                </Container>
+            </Navbar>
+        </header>
     );
-  }
 }
