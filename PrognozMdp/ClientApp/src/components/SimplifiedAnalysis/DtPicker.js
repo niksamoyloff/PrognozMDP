@@ -2,16 +2,16 @@
 import DateTimePicker from 'react-datetime-picker';
 import { Form } from 'react-bootstrap';
 import { useDispatch } from 'react-redux';
-import { getDatetime } from '../../store/actions/calculation';
+import { setDatetime } from '../../store/actions/simplified/result';
 
-function DtPicker(props) {
+function DtPicker() {
     const [value, onChange] = useState(new Date());
     const [checked, setChecked] = useState(true);
 
     const dispatch = useDispatch();
 
     useEffect(() => {
-        dispatch(getDatetime(value, checked));
+        dispatch(setDatetime(value, checked));
     }, [checked, dispatch]);
 
     return (
@@ -31,7 +31,7 @@ function DtPicker(props) {
                             <DateTimePicker
                                 onChange={(val) => {
                                     onChange(val);
-                                    dispatch(getDatetime(val, checked));
+                                    dispatch(setDatetime(val, checked));
                                 }}
                                 value={value}
                                 format="dd.MM.yyyy HH:mm:ss"
