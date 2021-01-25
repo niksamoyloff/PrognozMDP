@@ -8,8 +8,7 @@ const initialState = {
     disabledEq: "",
     isCurrentDt: true,
     dt: "",
-    flowWithValues: null,
-    section: null
+    flowWithValues: null
 }
 
 export default function simplifiedResultReducer(state = initialState, action) {
@@ -19,11 +18,6 @@ export default function simplifiedResultReducer(state = initialState, action) {
                 ...state, 
                 bitMask: action.payload.bitMask
             };
-        case types.SET_CURRENT_SECTION:
-            return {
-                ...state,
-                section: action.payload.section
-            }
         case types.SET_DISABLED_EQUIPMENT:
             return {
                 ...state,

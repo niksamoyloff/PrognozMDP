@@ -3,6 +3,7 @@
 const initialState = {
     loading: false,
     sections: [],
+    selectedSection: null,
     error: null
 }
 
@@ -27,6 +28,11 @@ export default function simplifiedSectionsReducer(state = initialState, action) 
                 error: action.payload.error,
                 sections: []
             };
+        case types.SET_SELECTED_SECTION:
+            return {
+                ...state,
+                selectedSection: action.payload.section
+            }
         default:
             return state;
     }

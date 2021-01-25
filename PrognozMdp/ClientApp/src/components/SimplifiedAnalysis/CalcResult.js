@@ -9,10 +9,10 @@ function CalcResult() {
             loading: state.simplifiedResultReducer.loading,
             flowName: state.simplifiedResultReducer.flowName === "mdp" ? "МДП" : "АДП",
             flowWithValues: state.simplifiedResultReducer.flowWithValues,
-            section: state.simplifiedResultReducer.section,
             disabledEq: state.simplifiedResultReducer.disabledEq,
             isCurrentDt: state.simplifiedResultReducer.isCurrentDt,
-            dt: state.simplifiedResultReducer.dt
+            dt: state.simplifiedResultReducer.dt,
+            section: state.simplifiedSectionsReducer.selectedSection
         }),
         (prev, next) => prev.loading === next.loading
     );

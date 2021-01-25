@@ -11,16 +11,6 @@ export const setBitMask = bitMask => {
         });
     };
 }
-export const setCurrentSection = section => {
-    return dispatch => {
-        dispatch({
-            type: types.SET_CURRENT_SECTION,
-            payload: {
-                section
-            }
-        });
-    }
-}
 export const setDisabledEq = disabledEq => {
     return dispatch => {
         dispatch({

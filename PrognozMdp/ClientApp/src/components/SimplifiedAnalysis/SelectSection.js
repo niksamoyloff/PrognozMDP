@@ -1,10 +1,9 @@
-﻿import React, { Fragment, useState, useEffect, useCallback } from 'react';
+﻿import React, { Fragment, useEffect } from 'react';
 import Select from 'react-select';
 import Error from '../Error';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchSections } from '../../store/actions/simplified/sections';
+import { fetchSections, setSelectedSection } from '../../store/actions/simplified/sections';
 import { fetchEquipment } from '../../store/actions/simplified/equipment';
-import { setCurrentSection } from '../../store/actions/simplified/result';
 import './SelectSection.css';
 
 function SelectSection() {
@@ -14,7 +13,7 @@ function SelectSection() {
             hasError: state.simplifiedSectionsReducer.error !== null ? true : false,
             sections: state.simplifiedSectionsReducer.sections,
             loading: state.simplifiedSectionsReducer.loading,
-            selectedSection: state.simplifiedResultReducer.section
+            selectedSection: state.simplifiedSectionsReducer.selectedSection
         })
     );
 
@@ -27,7 +26,7 @@ function SelectSection() {
 
     function handleChangeSelect(sect) {
         dispatch(fetchEquipment(sect.value));
-        dispatch(setCurrentSection(sect));
+        dispatch(setSelectedSection(sect));
     }
 
     return (
@@ -38,7 +37,7 @@ function SelectSection() {
             <Select
                 options={sections}
                 isLoading={loading}
-                value={sections.find(({val}) => val === selectedSection)}
+                value={selectedSection}
                 placeholder="Выберите сечение..."
                 noOptionsMessage={() => "Сечения отсутствуют."}
                 onChange={handleChangeSelect}

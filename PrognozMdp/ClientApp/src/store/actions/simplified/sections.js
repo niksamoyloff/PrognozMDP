@@ -31,3 +31,14 @@ const fetchSectionsFailure = error => ({
         error
     }
 });
+
+export const setSelectedSection = section => {
+    return dispatch => {
+        dispatch({
+            type: types.SET_SELECTED_SECTION,
+            payload: {
+                section
+            }
+        });
+    }
+}
