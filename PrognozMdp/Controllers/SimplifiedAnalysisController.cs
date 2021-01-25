@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,10 +16,8 @@ using PrognozMdp.Services;
 namespace PrognozMdp.Controllers
 {
     [Route("[controller]/[action]")]
-    //[ApiController]
     public class SimplifiedAnalysisController : ControllerBase
     {
-        //private readonly IConfiguration _configuration;
         private readonly Oic _oic;
         public SimplifiedAnalysisController(Oic oic)
         {
@@ -26,11 +25,12 @@ namespace PrognozMdp.Controllers
         }
 
         [HttpGet]
-        public JObject[] GetSections()
+        public async Task<JObject[]> GetSectionsAsync()
         {
-            var sectionCollection = _oic?.GetSectionsFromOic();
+            if (_oic == null) return null;
+
+            var sectionCollection = await _oic.GetSectionsFromOicAsync();
             var sectionList = new List<JObject>();
-            var test = new List<JObject>();
 
             if (sectionCollection != null && sectionCollection.Count > 0)
             {
@@ -45,15 +45,14 @@ namespace PrognozMdp.Controllers
                 }
             }
             return sectionList.ToArray();
-            //return test.ToArray();
         }
 
         [HttpGet]
-        public JObject[] GetEquipmentBySection(string sectionId)
+        public async Task<JObject[]> GetEquipmentBySectionAsync(string sectionId)
         {
-            if (string.IsNullOrEmpty(sectionId))
+            if (_oic == null || string.IsNullOrEmpty(sectionId))
                 return null;
-            var eqCollection = _oic?.GetEquipmentBySectionFromOic(sectionId);
+            var eqCollection = await _oic.GetEquipmentBySectionFromOicAsync(sectionId);
             var eqList = new List<JObject>();
 
             if (eqCollection != null && eqCollection.Count > 0)
@@ -75,14 +74,16 @@ namespace PrognozMdp.Controllers
         }
 
         [HttpGet]
-        public JObject CalculateFlowByScheme(string flow, string sectionId, string mask, DateTime? dt)
+        public async Task<JObject> CalculateFlowBySchemeAsync(string flow, string sectionId, string mask, DateTime? dt)
         {
-            var scheme = _oic?.GetSchemeByBitMask(sectionId, mask);
-            JObject result = new JObject
+            if (_oic == null) return null;
+            var scheme = await _oic.GetSchemeByBitMaskAsync(sectionId, mask);
+            var result = new JObject
             {
                 {"flowCurrentValue", null},
                 {"flowCalcValue", null}
             };
+            
             if (scheme == null || scheme.Count == 0)
                 return result;
             if (string.IsNullOrEmpty(scheme["Max1"]) &&
@@ -92,9 +93,9 @@ namespace PrognozMdp.Controllers
                 return result;
             
             string formula;
-            
-            _oic?.GetOicParamsValues(new[] {"I" + scheme["IDTI"]}, DateTime.Now);
-            var flowCurrentValue = Convert.ToDouble(_oic?.OicParamsValues?.FirstOrDefault().Value);
+            _oic.SetOicParamsValues(new[] {"I" + scheme["IDTI"]}, DateTime.Now);
+
+            var flowCurrentValue = Convert.ToDouble(_oic.OicParamsValues?.FirstOrDefault().Value);
             result["flowCurrentValue"] = flowCurrentValue;
 
             if (flow.Equals("mdp"))
@@ -108,9 +109,10 @@ namespace PrognozMdp.Controllers
                             result["flowCalcValue"] = Convert.ToDouble(scheme["Max1"]);
                             return result;
                         }
-                        formula = _oic?.GetFormulaById(scheme["Max1"]);
-                        _oic.GetParamsByFormulaId(scheme["Max1"], dt);
-                        result["flowCalcValue"] = _oic?.CalcFlowByFormula(formula);
+                        formula = await _oic.GetFormulaByIdAsync(scheme["Max1"]);
+                        var parameters = _oic.GetParamsByFormulaIdAsync(scheme["Max1"]).Result;
+                        _oic.SetOicParamsValues(parameters, dt);
+                        result["flowCalcValue"] = _oic.CalcFlowByFormula(formula);
                         return result;
                     }
                 }
@@ -123,9 +125,10 @@ namespace PrognozMdp.Controllers
                             result["flowCalcValue"] = Convert.ToDouble(scheme["Max2"]);
                             return result;
                         }
-                        formula = _oic?.GetFormulaById(scheme["Max2"]);
-                        _oic?.GetParamsByFormulaId(scheme["Max2"], dt);
-                        result["flowCalcValue"] = _oic?.CalcFlowByFormula(formula);
+                        formula = await _oic.GetFormulaByIdAsync(scheme["Max2"]);
+                        var parameters = _oic.GetParamsByFormulaIdAsync(scheme["Max2"]).Result;
+                        _oic.SetOicParamsValues(parameters, dt);
+                        result["flowCalcValue"] = _oic.CalcFlowByFormula(formula);
                         return result;
                     }
                 }
@@ -142,9 +145,10 @@ namespace PrognozMdp.Controllers
                             result["flowCalcValue"] = Convert.ToDouble(scheme["Crash1"]);
                             return result;
                         }
-                        formula = _oic?.GetFormulaById(scheme["Crash1"]);
-                        _oic?.GetParamsByFormulaId(scheme["Crash1"], dt);
-                        result["flowCalcValue"] = _oic?.CalcFlowByFormula(formula);
+                        formula = await _oic.GetFormulaByIdAsync(scheme["Crash1"]);
+                        var parameters = _oic.GetParamsByFormulaIdAsync(scheme["Crash1"]).Result;
+                        _oic.SetOicParamsValues(parameters, dt);
+                        result["flowCalcValue"] = _oic.CalcFlowByFormula(formula);
                         return result;
                     }
                 }
@@ -157,9 +161,10 @@ namespace PrognozMdp.Controllers
                             result["flowCalcValue"] = Convert.ToDouble(scheme["Crash2"]);
                             return result;
                         }
-                        formula = _oic?.GetFormulaById(scheme["Crash2"]);
-                        _oic?.GetParamsByFormulaId(scheme["Crash2"], dt);
-                        result["flowCalcValue"] = _oic?.CalcFlowByFormula(formula);
+                        formula = await _oic.GetFormulaByIdAsync(scheme["Crash2"]);
+                        var parameters = _oic.GetParamsByFormulaIdAsync(scheme["Crash2"]).Result;
+                        _oic.SetOicParamsValues(parameters, dt);
+                        result["flowCalcValue"] = _oic.CalcFlowByFormula(formula);
                         return result;
                     }
                 }
