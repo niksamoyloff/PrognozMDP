@@ -1,9 +1,18 @@
-﻿import React, { useState } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { ButtonGroup, ToggleButton } from "react-bootstrap";
 
 function StateToggleButton(props) {
-    const [checked, setChecked] = useState(false);
+    const [checked, setChecked] = useState();
     const [radioValue, setRadioValue] = useState(props.defaultState ? "1" : "0");
+
+    const updateRadioValue = (state) => {
+        const val = state ? "1" : "0";
+        setRadioValue(val);
+    }
+
+    useEffect(() => {
+        updateRadioValue(props.defaultState);
+    }, [props.defaultState]);
 
     return (
         <ButtonGroup toggle>
