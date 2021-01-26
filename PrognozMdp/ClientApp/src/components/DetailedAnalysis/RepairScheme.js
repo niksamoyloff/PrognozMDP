@@ -42,7 +42,6 @@ export function RepairScheme() {
             $("#schemeSvg").load(schemeUrl);
             setFirstUpdate(false);
         }
-        console.log(selectedNetItems);
     }, [loading, firstUpdate, selectedNetItems]);
 
     function handleGetElementDataById(target, id) {
