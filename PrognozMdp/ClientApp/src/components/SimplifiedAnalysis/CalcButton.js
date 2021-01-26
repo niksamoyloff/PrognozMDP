@@ -12,11 +12,11 @@ function CalcButton() {
         state => ({
             loading: state.simplifiedResultReducer.loading,
             flowName: state.simplifiedResultReducer.flowName,
-            section: state.simplifiedResultReducer.section,
             bitMask: state.simplifiedResultReducer.bitMask,
             isCurrentDt: state.simplifiedResultReducer.isCurrentDt,
             dt: state.simplifiedResultReducer.dt,
-            hasError: state.simplifiedResultReducer.error !== null ? true : false
+            hasError: state.simplifiedResultReducer.error !== null ? true : false,
+            section: state.simplifiedSectionsReducer.selectedSection
         })
     );
 
